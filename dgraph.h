@@ -10,29 +10,37 @@
 #define __maxflowmincost__dgraph__
 
 #include <vector>
+#include <functional>
 
-struct Node
+struct Arc
 {
-    double weight;
+    double capacity;
     double cost;
-    Node():weight(0), cost(0) {};
-    void set(double w, double c) {weight = w; cost = c;}
+    Arc():capacity(0), cost(0) {};
+    void set(double w, double c) {capacity = w; cost = c;}
+    static double cst(Arc &a) { return a.cost; };
+    static double cap(Arc &a) { return a.capacity; };
 };
 
 struct DGraph
 {
-    std::vector<std::vector<Node>> adj;
+    std::vector<std::vector<Arc>> adj;
 
     DGraph(unsigned nodesNumber);
     DGraph& operator=(DGraph &value);
 
-    std::vector<double> bellmanFord(unsigned v);
-    std::vector<double> dijkstra(unsigned v);
+    std::vector<double> bellmanFordW(unsigned v, std::vector<unsigned> *path = 0);
+    std::vector<double> dijkstraW(unsigned v, std::vector<unsigned> *path = 0);
+    std::vector<double> bellmanFordC(unsigned v, std::vector<unsigned> *path = 0);
+    std::vector<double> dijkstraC(unsigned v, std::vector<unsigned> *path = 0);
 
+    void reduceCost(double amount);
     void print() const;
 
-private:
+protected:
     unsigned nodesNumber;
+    std::vector<double> bellmanFord(unsigned v, double arcProp(Arc &), std::vector<unsigned> *path = 0);
+    std::vector<double> dijkstra(unsigned v, double arcProp(Arc &), std::vector<unsigned> *path = 0);
 };
 
 #endif /* defined(__maxflowmincost__dgraph__) */

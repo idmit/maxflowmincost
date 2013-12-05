@@ -10,7 +10,7 @@
 #include <limits>
 #include "dgraph.h"
 
-DGraph::DGraph(unsigned nodesNumber):nodesNumber(nodesNumber), adj(nodesNumber, std::vector<Node>(nodesNumber)) {}
+DGraph::DGraph(unsigned nodesNumber):nodesNumber(nodesNumber), adj(nodesNumber, std::vector<Arc>(nodesNumber)) {}
 
 DGraph& DGraph::operator=(DGraph &value)
 {
@@ -28,14 +28,14 @@ void DGraph::print() const
     {
         for (auto in = std::begin(*it); in != std::end(*it); ++in)
         {
-            std::cout << "(w" << in->weight << ", c" << in->cost << ") ";
+            std::cout << "(w" << in->capacity << ", c" << in->cost << ") ";
         }
         std::cout << '\n';
     }
 }
 
 /* Returns vector with i-th value equal to dist(s, i) */
-std::vector<double> DGraph::bellmanFord(unsigned s)
+std::vector<double> DGraph::bellmanFord(unsigned s, double arcProp(Arc &), std::vector<unsigned> *path)
 {
     std::vector<double> distance(nodesNumber);
     std::vector<unsigned> predecessor(nodesNumber);
@@ -45,7 +45,7 @@ std::vector<double> DGraph::bellmanFord(unsigned s)
     for (unsigned i = 0; i < nodesNumber; ++i)
     {
         distance[i] = (i == s) ? 0 : std::numeric_limits<double>::infinity();
-        predecessor[i] = -1;
+        predecessor[i] = nodesNumber;
     }
 
     /* main loop */
@@ -57,11 +57,12 @@ std::vector<double> DGraph::bellmanFord(unsigned s)
         {
             for (unsigned v = 0; v < nodesNumber; ++v)
             {
-                auto w = adj[u][v].weight;
+                auto cap = adj[u][v].capacity;
+                auto prop = arcProp(adj[u][v]);
 
-                if (w > 0 && distance[u] + w < distance[v])
+                if (cap > 0 && distance[u] + prop < distance[v])
                 {
-                    distance[v] = distance[u] + w;
+                    distance[v] = distance[u] + prop;
                     predecessor[v] = u;
                     meaningfullIteration = true;
                 }
@@ -69,11 +70,16 @@ std::vector<double> DGraph::bellmanFord(unsigned s)
         }
     }
 
+    if (path)
+    {
+        *path = predecessor;
+    }
+    
     return distance;
 }
 
 /* Returns vector with i-th value equal to dist(s, i) */
-std::vector<double> DGraph::dijkstra(unsigned s)
+std::vector<double> DGraph::dijkstra(unsigned s, double arcProp(Arc &), std::vector<unsigned> *path)
 {
     std::vector<double> distance(nodesNumber);
     std::vector<unsigned> predecessor(nodesNumber), Q;
@@ -84,7 +90,7 @@ std::vector<double> DGraph::dijkstra(unsigned s)
     {
         distance[i] = std::numeric_limits<double>::infinity();
         visited[i] = false;
-        predecessor[i] = -1;
+        predecessor[i] = nodesNumber;
     }
 
     distance[s] = 0;
@@ -106,13 +112,15 @@ std::vector<double> DGraph::dijkstra(unsigned s)
         /* shrink dist(s, v) if addition of u helps */
         for (unsigned v = 0; v < nodesNumber; ++v)
         {
-            auto w = adj[u][v].weight;
-            if (!(w > 0))
+            auto cap = adj[u][v].capacity;
+            if (!(cap > 0))
             {
                 continue;
             }
 
-            double alternative = distance[u] + w;
+            auto prop = arcProp(adj[u][v]);
+            
+            double alternative = distance[u] + prop;
             if (alternative < distance[v])
             {
                 distance[v] = alternative;
@@ -122,5 +130,41 @@ std::vector<double> DGraph::dijkstra(unsigned s)
         }
     }
     
+    if (path)
+    {
+        *path = predecessor;
+    }
+    
     return distance;
+}
+
+std::vector<double> DGraph::bellmanFordW(unsigned v, std::vector<unsigned> *path)
+{
+    return bellmanFord(v, Arc::cap, path);
+}
+
+std::vector<double> DGraph::dijkstraW(unsigned v, std::vector<unsigned> *path)
+{
+    return dijkstra(v, Arc::cap, path);
+}
+
+std::vector<double> DGraph::bellmanFordC(unsigned v, std::vector<unsigned> *path)
+{
+    return bellmanFord(v, Arc::cst, path);
+}
+
+std::vector<double> DGraph::dijkstraC(unsigned v, std::vector<unsigned> *path)
+{
+    return dijkstra(v, Arc::cst, path);
+}
+
+void DGraph::reduceCost(double amount)
+{
+    for (unsigned u = 0; u < nodesNumber; ++u)
+    {
+        for (unsigned v = 0; v < nodesNumber; ++v)
+        {
+            adj[u][v].cost += amount;
+        }
+    }
 }

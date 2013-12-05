@@ -7,18 +7,19 @@
 //
 
 #include "dgraph.h"
+#include "network.h"
 
 int main(int argc, const char * argv[])
 {
     DGraph dg(3);
-    auto v = dg.bellmanFord(0);
+    Network n(3, 0, 2);
+    double f;
     
-    dg.adj[0][1].set(1, 1);
-    dg.adj[1][2].set(1, 1);
-    dg.adj[0][2].set(1, 1);
+    n.adj[0][1].set(1, 1);
+    n.adj[1][2].set(1, 1);
+//    n.adj[0][2].set(1, 1);
     
-    v = dg.dijkstra(0);
-    v = dg.bellmanFord(0);
+    f = n.MaxFlowMinCost();
     
     return 0;
 }

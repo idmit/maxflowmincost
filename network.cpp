@@ -10,14 +10,19 @@
 
 double Network::MaxFlowMinCost(double *cost, Network *flowNetwork) const
 {
+    /* Keeps original costs and stores arc flow in cap */
     auto flowStorage = *this;
+    
+    /* Copy of network with added negative backward arcs */
     auto supplemented = *this;
+    
     std::vector<double> distance(nodesNumber);
     std::vector<unsigned> aug(nodesNumber);
     bool augPathExists = true;
     
-    double flow = 0, minAugFlow = 0;
+    double flow = 0, maxAugFlow = 0;
     
+    /* Adds negative backward arcs and sets overall flow to zero */
     for (unsigned u = 0; u < nodesNumber; ++u)
     {
         for (unsigned v = 0; v < nodesNumber; ++v)
@@ -30,8 +35,10 @@ double Network::MaxFlowMinCost(double *cost, Network *flowNetwork) const
         }
     }
     
+    /* Calculates initial potentials with possibility of negative costs */
     auto potential = supplemented.bellmanFordCst(src);
     
+    /* Adjusts costs so that they all become non-negative */
     for (unsigned u = 0; u < nodesNumber; ++u)
     {
         for (unsigned v = 0; v < nodesNumber; ++v)
@@ -40,12 +47,15 @@ double Network::MaxFlowMinCost(double *cost, Network *flowNetwork) const
         }
     }
     
+    /* main loop */
     while (augPathExists)
     {
         augPathExists = false;
         
+        /* New potentials can be found by dijkstra, because costs are non-negative */
         potential = supplemented.dijkstraCst(src, &aug);
         
+        /* Applies new potentials */
         for (unsigned u = 0; u < nodesNumber; ++u)
         {
             for (unsigned v = 0; v < nodesNumber; ++v)
@@ -54,30 +64,36 @@ double Network::MaxFlowMinCost(double *cost, Network *flowNetwork) const
             }
         }
         
+        /* Finds the max flow that can be added to the cheapest path (goes from snk to src) */
         unsigned i = snk;
-        minAugFlow = 0;
+        maxAugFlow = 0;
         while (aug[i] != nodesNumber)
         {
             auto cap = supplemented.adj[aug[i]][i].capacity;
             augPathExists = true;
-            if (minAugFlow < cap)
+            if (maxAugFlow < cap)
             {
-                minAugFlow = cap;
+                maxAugFlow = cap;
             }
             i = aug[i];
         }
         
+        /* Adds found amount to that path (goes from snk to src) */
         i = snk;
         while (aug[i] != nodesNumber)
         {
-            flowStorage.adj[aug[i]][i].capacity += minAugFlow;
-            supplemented.adj[aug[i]][i].capacity -= minAugFlow;
-            supplemented.adj[i][aug[i]].capacity += minAugFlow;
+            flowStorage.adj[aug[i]][i].capacity += maxAugFlow;
+            supplemented.adj[aug[i]][i].capacity -= maxAugFlow;
+            supplemented.adj[i][aug[i]].capacity += maxAugFlow;
             i = aug[i];
         }
-        flow += minAugFlow;
+        
+        /* Increases overall flow */
+        
+        flow += maxAugFlow;
     }
     
+    /* Calculates flow's cost (if requested) */
     if (cost)
     {
         for (unsigned u = 0; u < nodesNumber; ++u)
@@ -89,6 +105,7 @@ double Network::MaxFlowMinCost(double *cost, Network *flowNetwork) const
         }
     }
     
+    /* Exports found flow (if requested) */
     if (flowNetwork)
     {
         *flowNetwork = flowStorage;

@@ -22,20 +22,62 @@ DGraph& DGraph::operator=(DGraph &value)
     return *this;
 }
 
-void DGraph::print() const
+void DGraph::printM() const
 {
     for (auto it = std::begin(adj); it != std::end(adj); ++it)
     {
         for (auto in = std::begin(*it); in != std::end(*it); ++in)
         {
-            std::cout << "(w" << in->capacity << ", c" << in->cost << ") ";
+            std::cout << "(" << in->capacity << ", " << in->cost << ") ";
         }
         std::cout << '\n';
     }
 }
 
+void DGraph::printMProperty(double arcProp(const Arc &)) const
+{
+    for (unsigned u = 0; u < nodesNumber; ++u)
+    {
+        for (unsigned v = 0; v < nodesNumber; ++v)
+        {
+            std::cout << arcProp(adj[u][v]) << ", ";
+        }
+        std::cout << '\n';
+    }
+}
+
+void DGraph::printMCap() const
+{
+    printMProperty(Arc::cap);
+}
+
+void DGraph::printMCst() const
+{
+    printMProperty(Arc::cst);
+}
+
+void DGraph::printProperty(double arcProp(const Arc &)) const
+{
+    for (unsigned u = 0; u < nodesNumber; ++u)
+    {
+        for (unsigned v = 0; v < nodesNumber; ++v)
+        {
+            if (arcProp(adj[u][v]))
+            {
+                std::cout << "(" << u << ", " << v << ") = " << arcProp(adj[u][v]) << '\n';
+            }
+        }
+    }
+    std::cout << '\n';
+}
+
+void DGraph::printCap() const
+{
+    printProperty(Arc::cap);
+}
+
 /* Returns vector with i-th value equal to dist(s, i) */
-std::vector<double> DGraph::bellmanFord(unsigned s, double arcProp(Arc &), std::vector<unsigned> *path)
+std::vector<double> DGraph::bellmanFord(unsigned s, double arcProp(const Arc &), std::vector<unsigned> *path) const
 {
     std::vector<double> distance(nodesNumber);
     std::vector<unsigned> predecessor(nodesNumber);
@@ -79,7 +121,7 @@ std::vector<double> DGraph::bellmanFord(unsigned s, double arcProp(Arc &), std::
 }
 
 /* Returns vector with i-th value equal to dist(s, i) */
-std::vector<double> DGraph::dijkstra(unsigned s, double arcProp(Arc &), std::vector<unsigned> *path)
+std::vector<double> DGraph::dijkstra(unsigned s, double arcProp(const Arc &), std::vector<unsigned> *path) const
 {
     std::vector<double> distance(nodesNumber);
     std::vector<unsigned> predecessor(nodesNumber), Q;
@@ -138,33 +180,12 @@ std::vector<double> DGraph::dijkstra(unsigned s, double arcProp(Arc &), std::vec
     return distance;
 }
 
-std::vector<double> DGraph::bellmanFordW(unsigned v, std::vector<unsigned> *path)
-{
-    return bellmanFord(v, Arc::cap, path);
-}
-
-std::vector<double> DGraph::dijkstraW(unsigned v, std::vector<unsigned> *path)
-{
-    return dijkstra(v, Arc::cap, path);
-}
-
-std::vector<double> DGraph::bellmanFordC(unsigned v, std::vector<unsigned> *path)
+std::vector<double> DGraph::bellmanFordCst(unsigned v, std::vector<unsigned> *path) const
 {
     return bellmanFord(v, Arc::cst, path);
 }
 
-std::vector<double> DGraph::dijkstraC(unsigned v, std::vector<unsigned> *path)
+std::vector<double> DGraph::dijkstraCst(unsigned v, std::vector<unsigned> *path) const
 {
     return dijkstra(v, Arc::cst, path);
-}
-
-void DGraph::reduceCost(double amount)
-{
-    for (unsigned u = 0; u < nodesNumber; ++u)
-    {
-        for (unsigned v = 0; v < nodesNumber; ++v)
-        {
-            adj[u][v].cost += amount;
-        }
-    }
 }

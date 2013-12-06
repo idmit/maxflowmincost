@@ -15,7 +15,7 @@ struct Network:DGraph
 {
     Network(unsigned nodesNumber, unsigned source, unsigned sink):DGraph(nodesNumber), src(source), snk(sink) {}
     
-    double MaxFlowMinCost();
+    double MaxFlowMinCost(double *cost = 0, Network *flowNetwork = 0) const;
 private:
     unsigned src, snk;
 };

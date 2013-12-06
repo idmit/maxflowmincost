@@ -11,15 +11,21 @@
 
 int main(int argc, const char * argv[])
 {
-    DGraph dg(3);
-    Network n(3, 0, 2);
-    double f;
+    Network n(5, 0, 4);
+    Network flow(5, 0, 4);
+    double f, cost;
     
     n.adj[0][1].set(1, 1);
-    n.adj[1][2].set(1, 1);
-//    n.adj[0][2].set(1, 1);
     
-    f = n.MaxFlowMinCost();
+    n.adj[1][2].set(1, 1.5);
+    n.adj[2][4].set(1, -0.5);
+    
+    n.adj[1][3].set(1, 0.5);
+    n.adj[3][4].set(1, 0.5);
+    
+    f = n.MaxFlowMinCost(&cost, &flow);
+    
+    flow.printCap();
     
     return 0;
 }

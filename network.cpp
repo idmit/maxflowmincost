@@ -8,10 +8,9 @@
 
 #include "network.h"
 
-double Network::MaxFlowMinCost()
+double Network::MaxFlowMinCost(double *cost, Network *flowNetwork) const
 {
-    
-    auto flowNetwork = *this;
+    auto flowStorage = *this;
     auto supplemented = *this;
     std::vector<double> distance(nodesNumber);
     std::vector<unsigned> aug(nodesNumber);
@@ -27,11 +26,11 @@ double Network::MaxFlowMinCost()
             {
                 supplemented.adj[v][u].cost = - adj[u][v].cost;
             }
-            flowNetwork.adj[u][v].capacity = 0;
+            flowStorage.adj[u][v].capacity = 0;
         }
     }
     
-    auto potential = supplemented.bellmanFordC(src);
+    auto potential = supplemented.bellmanFordCst(src);
     
     for (unsigned u = 0; u < nodesNumber; ++u)
     {
@@ -45,7 +44,7 @@ double Network::MaxFlowMinCost()
     {
         augPathExists = false;
         
-        potential = supplemented.dijkstraC(src, &aug);
+        potential = supplemented.dijkstraCst(src, &aug);
         
         for (unsigned u = 0; u < nodesNumber; ++u)
         {
@@ -71,12 +70,28 @@ double Network::MaxFlowMinCost()
         i = snk;
         while (aug[i] != nodesNumber)
         {
-            flowNetwork.adj[aug[i]][i].capacity += minAugFlow;
+            flowStorage.adj[aug[i]][i].capacity += minAugFlow;
             supplemented.adj[aug[i]][i].capacity -= minAugFlow;
             supplemented.adj[i][aug[i]].capacity += minAugFlow;
             i = aug[i];
         }
         flow += minAugFlow;
+    }
+    
+    if (cost)
+    {
+        for (unsigned u = 0; u < nodesNumber; ++u)
+        {
+            for (unsigned v = 0; v < nodesNumber; ++v)
+            {
+                *cost += flowStorage.adj[u][v].capacity * flowStorage.adj[u][v].cost;
+            }
+        }
+    }
+    
+    if (flowNetwork)
+    {
+        *flowNetwork = flowStorage;
     }
     
     return flow;

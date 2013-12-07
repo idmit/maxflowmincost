@@ -7,6 +7,8 @@
 //
 
 #include "network.h"
+#include <fstream>
+#include <strstream>
 
 double Network::MaxFlowMinCost(double *cost, Network *flowNetwork) const
 {
@@ -66,16 +68,20 @@ double Network::MaxFlowMinCost(double *cost, Network *flowNetwork) const
         
         /* Finds the max flow that can be added to the cheapest path (goes from snk to src) */
         unsigned i = snk;
-        maxAugFlow = 0;
+        maxAugFlow = std::numeric_limits<double>::infinity();
         while (aug[i] != nodesNumber)
         {
             auto cap = supplemented.adj[aug[i]][i].capacity;
-            augPathExists = true;
-            if (maxAugFlow < cap)
+            if (cap && cap < maxAugFlow)
             {
                 maxAugFlow = cap;
+                augPathExists = true;
             }
             i = aug[i];
+        }
+        if (!augPathExists)
+        {
+            break;
         }
         
         /* Adds found amount to that path (goes from snk to src) */
@@ -112,4 +118,37 @@ double Network::MaxFlowMinCost(double *cost, Network *flowNetwork) const
     }
     
     return flow;
+}
+
+Network::Network(char *filename):DGraph(0)
+{
+    std::string line;
+    std::ifstream file(filename);
+    std::strstream stream;
+    unsigned from, to;
+    double  cap, cst;
+    
+    if (file.is_open())
+    {
+        while (std::getline(file, line))
+        {
+            char *buffer = new char[line.size() + 1];
+            buffer[line.size()] = 0;
+            memcpy(buffer, line.c_str(), line.size());
+
+            if (std::sscanf(buffer, "%u-%u %lf,%lf", &from, &to, &cap, &cst) == 4)
+            {
+                adj[from][to].capacity = cap;
+                adj[from][to].cost = cst;
+            }
+            else if (std::sscanf(buffer, "%u %u", &src, &snk) == 2)
+                ;
+            else if (std::sscanf(buffer, "%u", &nodesNumber) == 1)
+            {
+                adj.assign(nodesNumber, std::vector<Arc>(nodesNumber));
+            }
+        }
+        file.close();
+    }
+    
 }
